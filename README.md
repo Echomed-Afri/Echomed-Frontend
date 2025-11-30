@@ -40,22 +40,27 @@ frontend/
 ## Setup
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    ```
 
 2. **Environment variables**:
+
    - Copy `.env.example` to `.env`
    - Update `VITE_API_URL` with your backend URL
    - Firebase config is already set for echomed-afri project
 
 3. **Run development server**:
+
    ```bash
    npm run dev
    ```
+
    Opens at `http://localhost:5173`
 
 4. **Build for production**:
+
    ```bash
    npm run build
    ```
@@ -73,19 +78,23 @@ frontend/
 ## Firebase Deployment
 
 1. **Install Firebase CLI** (if not already):
+
    ```bash
    npm install -g firebase-tools
    ```
 
 2. **Login to Firebase**:
+
    ```bash
    firebase login
    ```
 
 3. **Initialize (first time only)**:
+
    ```bash
    firebase init hosting
    ```
+
    - Select `echomed-afri` project
    - Set public directory to `dist`
    - Configure as single-page app: `Yes`
@@ -101,6 +110,7 @@ Your app will be live at `https://echomed-afri.web.app`
 ## Features
 
 ### Patient Features
+
 - User registration and authentication
 - Find and book doctors
 - Video consultations
@@ -108,6 +118,7 @@ Your app will be live at `https://echomed-afri.web.app`
 - Chat with doctors
 
 ### Doctor Features
+
 - Doctor registration with specialization
 - Manage availability
 - Accept/reject consultations
@@ -116,6 +127,7 @@ Your app will be live at `https://echomed-afri.web.app`
 - Patient chat
 
 ### Admin Features
+
 - Platform statistics
 - User management
 - System monitoring
