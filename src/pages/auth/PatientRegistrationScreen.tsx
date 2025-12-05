@@ -11,8 +11,7 @@ import PatientStep1Personal from "../../components/auth/PatientStep1Personal";
 import PatientStep2Location from "../../components/auth/PatientStep2Location";
 import PatientStep3Emergency from "../../components/auth/PatientStep3Emergency";
 import PatientStep4Medical from "../../components/auth/PatientStep4Medical";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase";
+import { supabase } from "../../supabase";
 
 interface PatientData {
   email: string;
@@ -110,32 +109,33 @@ export default function PatientRegistrationScreen() {
     setError("");
 
     try {
-      // Create Firebase user with email and password
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        patientData.email,
-        patientData.password
-      );
-      const user = userCredential.user;
-      const idToken = await user.getIdToken();
-
-      // Register patient in backend
-      const response = await authAPI.registerPatient({
-        ...patientData,
-        idToken,
+      // Create Supabase user with email and password
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: patientData.email,
+        password: patientData.password,
       });
 
-      // Clear previous session to avoid conflicts
-      localStorage.clear();
-      // Store token and user info
-      localStorage.setItem("echomed_token", response.token);
-      localStorage.setItem("echomed_user_type", "patient");
+      if (signUpError) throw signUpError;
+      if (!data.user) throw new Error("User creation failed");
 
-      // Store patient information in context
-      dispatch({ type: "SET_USER", payload: response.user });
-      dispatch({ type: "SET_USER_TYPE", payload: "patient" });
-      dispatch({ type: "SET_AUTHENTICATED", payload: true });
-      navigate("/home");
+      // Register patient in backend (but don't store the returned token)
+      await authAPI.registerPatient({
+        ...patientData,
+        supabaseUserId: data.user.id,
+      });
+
+      // Sign out from Supabase to ensure user must verify email
+      await supabase.auth.signOut();
+
+      // Clear all session data to prevent auto-login
+      localStorage.clear();
+      sessionStorage.clear();
+
+      // Store success message temporarily before reload
+      sessionStorage.setItem('registration_success', 'true');
+
+      // Hard reload to /auth to completely reset app state
+      window.location.href = '/auth';
     } catch (err: any) {
       setError(
         "Registration failed: " + (err.response?.data?.error || err.message)

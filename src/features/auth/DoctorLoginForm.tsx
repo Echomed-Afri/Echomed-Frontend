@@ -3,8 +3,7 @@ import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { authAPI } from "../../services/api";
 import { useApp } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase";
+import { supabase } from "../../supabase";
 
 interface DoctorLoginFormProps {
   onSwitchMode: () => void;
@@ -28,17 +27,24 @@ export const DoctorLoginForm: React.FC<DoctorLoginFormProps> = ({
     setError("");
 
     try {
-      // Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        doctorEmail,
-        doctorPassword
-      );
-      const user = userCredential.user;
-      const idToken = await user.getIdToken();
+      // Sign in with Supabase
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: doctorEmail,
+          password: doctorPassword,
+        });
+
+      if (signInError) throw signInError;
+
+      if (!data.user) {
+        throw new Error("Authentication failed");
+      }
 
       // Authenticate with backend
-      const response = await authAPI.loginDoctor(idToken);
+      const response = await authAPI.loginDoctor(
+        data.user.id,
+        data.user.email!
+      );
 
       // Clear previous session to avoid conflicts (e.g., admin/patient)
       localStorage.clear();
@@ -54,12 +60,10 @@ export const DoctorLoginForm: React.FC<DoctorLoginFormProps> = ({
 
       navigate("/doctor-dashboard");
     } catch (err: any) {
-      if (err.code === "auth/user-not-found") {
-        setError("No account found with this email.");
-      } else if (err.code === "auth/wrong-password") {
-        setError("Incorrect password.");
-      } else if (err.code === "auth/invalid-email") {
-        setError("Invalid email address.");
+      if (err.message?.includes("Invalid login credentials")) {
+        setError("Invalid email or password.");
+      } else if (err.message?.includes("Email not confirmed")) {
+        setError("Please verify your email address.");
       } else if (err.response?.status === 404) {
         setError("Doctor account not found in database.");
       } else if (err.response?.status === 403) {

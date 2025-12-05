@@ -16,8 +16,7 @@ import {
 } from "lucide-react";
 import { authAPI } from "../../services/api";
 import axios from "axios";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase";
+import { supabase } from "../../supabase";
 
 const specialties = [
   "General Medicine",
@@ -143,18 +142,18 @@ export default function DoctorRegistrationScreen() {
 
     setLoading(true);
     try {
-      // Create Firebase user with email and password
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCredential.user;
-      const idToken = await user.getIdToken();
+      // Create Supabase user with email and password
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (signUpError) throw signUpError;
+      if (!data.user) throw new Error("User creation failed");
 
       // Map form data to API payload
       const payload = {
-        idToken,
+        supabaseUserId: data.user.id,
         email: formData.email,
         name: formData.fullName,
         specialty: formData.specialty,
@@ -171,21 +170,22 @@ export default function DoctorRegistrationScreen() {
 
       await authAPI.registerDoctor(payload as any);
 
-      // Optionally auto-login: store token and user
-      // For now, keep original UX (navigate to auth). Uncomment below to auto-login.
-      // localStorage.clear();
-      // localStorage.setItem('echomed_token', token);
-      // localStorage.setItem('echomed_user', JSON.stringify(doctor));
+      // Sign out to ensure user must verify email and login
+      await supabase.auth.signOut();
 
-      navigate("/auth");
+      // Redirect to login page with success message
+      navigate("/auth", { 
+        state: { 
+          message: "Registration successful! Please check your email to verify your account. Your application will be reviewed by our admin team." 
+        } 
+      });
     } catch (error: any) {
       let message = "Registration failed. Please try again.";
-      if (error.code === "auth/email-already-in-use") {
-        message =
-          "Email already in use. Please use a different email or login.";
-      } else if (error.code === "auth/weak-password") {
+      if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
+        message = "Email already in use. Please use a different email or login.";
+      } else if (error.message?.includes("weak") || error.message?.includes("password")) {
         message = "Password should be at least 6 characters.";
-      } else if (error.code === "auth/invalid-email") {
+      } else if (error.message?.includes("invalid") && error.message?.includes("email")) {
         message = "Invalid email address.";
       } else if (axios.isAxiosError(error)) {
         message = error.response?.data?.error || error.message || message;

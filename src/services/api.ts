@@ -40,8 +40,14 @@ export const authAPI = {
     return response.data;
   },
 
-  loginPatient: async (idToken: string): Promise<LoginResponse> => {
-    const response = await api.post("/auth/patient/login", { idToken });
+  loginPatient: async (
+    supabaseUserId: string,
+    email: string
+  ): Promise<LoginResponse> => {
+    const response = await api.post("/auth/patient/login", {
+      supabaseUserId,
+      email,
+    });
     return response.data;
   },
 
@@ -51,8 +57,14 @@ export const authAPI = {
     return response.data;
   },
 
-  loginDoctor: async (idToken: string): Promise<LoginResponse> => {
-    const response = await api.post("/auth/doctor/login", { idToken });
+  loginDoctor: async (
+    supabaseUserId: string,
+    email: string
+  ): Promise<LoginResponse> => {
+    const response = await api.post("/auth/doctor/login", {
+      supabaseUserId,
+      email,
+    });
     return response.data;
   },
 };

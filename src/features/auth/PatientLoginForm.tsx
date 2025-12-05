@@ -3,11 +3,7 @@ import { Mail, User, AlertCircle, Lock } from "lucide-react";
 import { authAPI } from "../../services/api";
 import { useApp } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-import { auth } from "../../firebase";
+import { supabase } from "../../supabase";
 
 interface PatientLoginFormProps {
   onSwitchMode: () => void;
@@ -31,33 +27,39 @@ export const PatientLoginForm: React.FC<PatientLoginFormProps> = ({
     setError("");
 
     try {
-      let userCredential;
+      let supabaseUser;
 
       if (isNewPatient) {
-        // Create Firebase user
-        userCredential = await createUserWithEmailAndPassword(
-          auth,
+        // Create Supabase user
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
-          password
-        );
+          password,
+        });
+
+        if (signUpError) throw signUpError;
+        supabaseUser = data.user;
       } else {
-        // Sign in Firebase user
-        userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+        // Sign in Supabase user
+        const { data, error: signInError } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+        if (signInError) throw signInError;
+        supabaseUser = data.user;
       }
 
-      const user = userCredential.user;
-      const idToken = await user.getIdToken();
+      if (!supabaseUser) {
+        throw new Error("Authentication failed");
+      }
 
       let response;
       if (isNewPatient) {
         const patientData = {
-          idToken,
+          supabaseUserId: supabaseUser.id,
+          email: supabaseUser.email,
           name: patientName,
-          email,
           gender: "other",
           age: 25,
           location: "",
@@ -65,7 +67,10 @@ export const PatientLoginForm: React.FC<PatientLoginFormProps> = ({
         };
         response = await authAPI.registerPatient(patientData);
       } else {
-        response = await authAPI.loginPatient(idToken);
+        response = await authAPI.loginPatient(
+          supabaseUser.id,
+          supabaseUser.email!
+        );
       }
 
       // Clear previous session
@@ -82,13 +87,13 @@ export const PatientLoginForm: React.FC<PatientLoginFormProps> = ({
       navigate("/home");
     } catch (err: any) {
       console.error(err);
-      if (err.code === "auth/user-not-found") {
-        setError("User not found. Please register as a new patient.");
-      } else if (err.code === "auth/wrong-password") {
-        setError("Incorrect password.");
-      } else if (err.code === "auth/email-already-in-use") {
+      if (err.message?.includes("Invalid login credentials")) {
+        setError("Invalid email or password.");
+      } else if (err.message?.includes("User already registered")) {
         setError("Email already in use. Please login instead.");
-      } else if (err.code === "auth/weak-password") {
+      } else if (
+        err.message?.includes("Password should be at least 6 characters")
+      ) {
         setError("Password should be at least 6 characters.");
       } else if (err.response?.status === 404) {
         setError("User not found in database. Please complete registration.");
@@ -222,22 +227,13 @@ export const PatientLoginForm: React.FC<PatientLoginFormProps> = ({
         {!isNewPatient && (
           <div>
             <button
-              onClick={() => setIsNewPatient(true)}
+              onClick={() => navigate("/patient-registration")}
               className="text-green-600 font-medium hover:text-green-700 transition-colors text-sm"
             >
               New here? Create an account
             </button>
           </div>
         )}
-
-        <div>
-          <button
-            onClick={() => navigate("/patient-registration")}
-            className="text-gray-500 font-medium hover:text-gray-700 transition-colors text-xs"
-          >
-            Need full registration with medical details?
-          </button>
-        </div>
       </div>
     </div>
   );

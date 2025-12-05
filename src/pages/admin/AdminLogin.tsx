@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shield, Eye, EyeOff } from "lucide-react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase";
+import { supabase } from "../../supabase";
 import api from "../../services/api";
 import axios from "axios";
 
@@ -22,19 +21,20 @@ const AdminLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      // First, authenticate with Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        credentials.email,
-        credentials.password
-      );
+      // First, authenticate with Supabase
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password,
+        });
 
-      // Get Firebase ID token
-      const idToken = await userCredential.user.getIdToken();
+      if (signInError) throw signInError;
+      if (!data.user) throw new Error("Authentication failed");
 
       // Authenticate against backend using doctor login (admin is a doctor with isAdmin=true)
       const res = await api.post("/auth/doctor/login", {
-        idToken,
+        supabaseUserId: data.user.id,
+        email: credentials.email,
       });
 
       const { doctor, token } = res.data || {};
@@ -45,8 +45,8 @@ const AdminLogin: React.FC = () => {
 
       if (!doctor.isAdmin) {
         setError("This account does not have admin access");
-        // Sign out from Firebase since they don't have admin access
-        await auth.signOut();
+        // Sign out from Supabase since they don't have admin access
+        await supabase.auth.signOut();
         return;
       }
 
