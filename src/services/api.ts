@@ -11,10 +11,24 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("echomed_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const token = localStorage.getItem("echomed_token") || localStorage.getItem("echomed_admin_token");
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  // Always add apikey for Supabase Gateway
+  if (anonKey) {
+    config.headers.apikey = anonKey;
   }
+
+  // Always use Anon Key for Authorization to satisfy Supabase Gateway
+  if (anonKey) {
+    config.headers.Authorization = `Bearer ${anonKey}`;
+  }
+
+  if (token) {
+    // Pass our custom token in a separate header to bypass Gateway validation
+    config.headers['x-custom-auth'] = token;
+  }
+  
   return config;
 });
 
@@ -76,10 +90,10 @@ export const patientAPI = {
 
 // Doctors API
 export const doctorsAPI = {
-  getAvailableDoctors: async (category?: string, isOnline?: boolean) => {
+  getAvailableDoctors: async (category?: string, isAvailable?: boolean) => {
     const params = new URLSearchParams();
     if (category) params.append("category", category);
-    if (isOnline !== undefined) params.append("isOnline", isOnline.toString());
+    if (isAvailable !== undefined) params.append("isAvailable", isAvailable.toString());
 
     const response = await api.get(`/doctors?${params.toString()}`);
     return response.data;
@@ -91,8 +105,8 @@ export const doctorsAPI = {
     return response.data;
   },
 
-  updateDoctorStatus: async (doctorId: string, isOnline: boolean) => {
-    const response = await api.put(`/doctors/${doctorId}/status`, { isOnline });
+  updateDoctorStatus: async (doctorId: string, isAvailable: boolean) => {
+    const response = await api.put(`/doctors/${doctorId}/status`, { isAvailable });
     return response.data;
   },
 
@@ -110,7 +124,8 @@ export const consultationsAPI = {
   },
 
   getConsultations: async (doctorId: String) => {
-    const response = await api.get(`/doctors/${doctorId}/consultations`);
+    // Backend infers doctor ID from the auth token
+    const response = await api.get(`/consultations`);
     return response.data;
   },
 

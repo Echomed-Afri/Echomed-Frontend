@@ -15,12 +15,16 @@ import PrescriptionsScreen from './pages/patient/PrescriptionsScreen';
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
-import socketService from './services/socket';
+
 import { doctorsAPI } from './services/api';
 
 // Protected Route Component
 function ProtectedRoute({ children, requireAuth = true }: { children: React.ReactNode; requireAuth?: boolean }) {
   const { state } = useApp();
+  
+  if (state.isLoading) {
+    return <div>Loading...</div>; // Or a proper loading spinner
+  }
   
   if (requireAuth && !state.isAuthenticated) {
     return <Navigate to="/auth" replace />;
@@ -122,21 +126,20 @@ function AppContent() {
             navigate('/home', { replace: true });
           }
         }
-        
-        // Connect to socket
-        socketService.connect();
       } else {
         // If no auth token, start from splash screen
         if (location.pathname === '/') {
           navigate('/splash', { replace: true });
         }
       }
+      
+      dispatch({ type: 'SET_LOADING', payload: false });
     };
 
     initializeApp();
 
     return () => {
-      socketService.disconnect();
+      // Cleanup
     };
   }, []); // Empty dependency array to run only once on mount
 

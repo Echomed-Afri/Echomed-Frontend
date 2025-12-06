@@ -6,6 +6,7 @@ interface AppState {
   userType: 'patient' | 'doctor' | null;
   currentLanguage: Language;
   isAuthenticated: boolean;
+  isLoading: boolean;
   consultations: Consultation[];
   homeVisits: HomeVisit[];
   menstrualCycles: MenstrualCycle[];
@@ -16,6 +17,7 @@ type AppAction =
   | { type: 'SET_USER_TYPE'; payload: 'patient' | 'doctor' }
   | { type: 'SET_LANGUAGE'; payload: Language }
   | { type: 'SET_AUTHENTICATED'; payload: boolean }
+  | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'ADD_CONSULTATION'; payload: Consultation }
   | { type: 'ADD_HOME_VISIT'; payload: HomeVisit }
   | { type: 'ADD_MENSTRUAL_CYCLE'; payload: MenstrualCycle }
@@ -26,6 +28,7 @@ const initialState: AppState = {
   userType: null,
   currentLanguage: 'en',
   isAuthenticated: false,
+  isLoading: true,
   consultations: [],
   homeVisits: [],
   menstrualCycles: []
@@ -46,6 +49,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, currentLanguage: action.payload };
     case 'SET_AUTHENTICATED':
       return { ...state, isAuthenticated: action.payload };
+    case 'SET_LOADING':
+      return { ...state, isLoading: action.payload };
     case 'ADD_CONSULTATION':
       return { ...state, consultations: [...state.consultations, action.payload] };
     case 'ADD_HOME_VISIT':

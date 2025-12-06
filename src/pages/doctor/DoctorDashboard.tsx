@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Users, Calendar, Clock, TrendingUp } from "lucide-react";
 import { useApp } from "../../contexts/AppContext";
 import { consultationsAPI, doctorsAPI } from "../../services/api";
-import socketService from "../../services/socket";
+
 import DoctorHeader from "../../components/doctor/DoctorHeader";
 import DoctorStatsCards from "../../components/doctor/DoctorStatsCards";
 import DoctorConsultationsList, {
@@ -14,7 +14,7 @@ export default function DoctorDashboard() {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
   const [consultations, setConsultations] = useState<any[]>([]);
-  const [isOnline, setIsOnline] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(false);
   const [stats, setStats] = useState({
     totalPatients: 0,
     todayConsultations: 0,
@@ -25,10 +25,8 @@ export default function DoctorDashboard() {
   useEffect(() => {
     // loadDoctorInfo();
     loadConsultations();
-    setupSocketListeners();
-
     return () => {
-      socketService.removeAllListeners();
+      // Cleanup
     };
   }, []);
 
@@ -55,11 +53,13 @@ export default function DoctorDashboard() {
     try {
       if (!state.user || state.user.id === undefined) {
         navigate("/auth");
+        return;
       }
 
-      const data = await consultationsAPI.getConsultations(state.user!.id);
+      const response = await consultationsAPI.getConsultations(state.user!.id);
+      const list = response.consultations || [];
       // Normalize status to lowercase for frontend compatibility
-      const normalizedData = data.map((c: any) => ({
+      const normalizedData = list.map((c: any) => ({
         ...c,
         status: c.status?.toLowerCase(),
       }));
@@ -83,46 +83,18 @@ export default function DoctorDashboard() {
     }
   };
 
-  const setupSocketListeners = () => {
-    socketService.connect();
 
-    socketService.onNewConsultation((consultation) => {
-      const normalized = {
-        ...consultation,
-        status: consultation.status?.toLowerCase(),
-      };
-      setConsultations((prev) => [normalized, ...prev]);
-      setStats((prev) => ({
-        ...prev,
-        pendingRequests: prev.pendingRequests + 1,
-      }));
-    });
-
-    socketService.onConsultationUpdated((consultation) => {
-      const normalized = {
-        ...consultation,
-        status: consultation.status?.toLowerCase(),
-      };
-      setConsultations((prev) =>
-        prev.map((c: any) => (c.id === normalized.id ? normalized : c))
-      );
-    });
-  };
 
   const handleStatusToggle = async () => {
     const doctorUser = state.user as any;
     if (!doctorUser?.id) return;
 
     try {
-      const newStatus = !isOnline;
+      const newStatus = !isAvailable;
       await doctorsAPI.updateDoctorStatus(doctorUser.id, newStatus);
-      setIsOnline(newStatus);
+      setIsAvailable(newStatus);
 
-      if (newStatus) {
-        socketService.setDoctorOnline(doctorUser.id);
-      } else {
-        socketService.setDoctorOffline(doctorUser.id);
-      }
+
     } catch (error) {
       console.error("Failed to update status:", error);
     }
@@ -150,19 +122,17 @@ export default function DoctorDashboard() {
 
   const handleLogout = () => {
     localStorage.clear();
-    socketService.disconnect();
+
     dispatch({ type: "LOGOUT" });
     navigate("/auth");
   };
-
-  // helpers now handled inside component
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50">
       <DoctorHeader
         name={(state.user as any)?.name}
         specialty={(state.user as any)?.specialty}
-        isOnline={isOnline}
+        isOnline={isAvailable}
         onToggleOnline={handleStatusToggle}
         onLogout={handleLogout}
       />
@@ -187,7 +157,7 @@ export default function DoctorDashboard() {
             },
             {
               label: "Rating",
-              value: stats.rating.toFixed(1),
+              value: Number(stats.rating || 0).toFixed(1),
               icon: <TrendingUp className="w-5 h-5" />,
             },
           ]}

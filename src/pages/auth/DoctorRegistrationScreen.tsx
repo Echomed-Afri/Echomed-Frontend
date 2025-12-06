@@ -142,18 +142,40 @@ export default function DoctorRegistrationScreen() {
 
     setLoading(true);
     try {
+      let user;
+
       // Create Supabase user with email and password
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
       });
 
-      if (signUpError) throw signUpError;
-      if (!data.user) throw new Error("User creation failed");
+      if (signUpError) {
+        // If user already exists, try to sign in to recover (orphaned user case)
+        if (
+          signUpError.message?.includes("already registered") ||
+          signUpError.message?.includes("already been registered")
+        ) {
+          const { data: signInData, error: signInError } =
+            await supabase.auth.signInWithPassword({
+              email: formData.email,
+              password: formData.password,
+            });
+
+          if (signInError) throw signUpError; // Throw original error if sign in fails
+          user = signInData.user;
+        } else {
+          throw signUpError;
+        }
+      } else {
+        user = data.user;
+      }
+
+      if (!user) throw new Error("User creation failed");
 
       // Map form data to API payload
       const payload = {
-        supabaseUserId: data.user.id,
+        supabaseUserId: user.id,
         email: formData.email,
         name: formData.fullName,
         specialty: formData.specialty,

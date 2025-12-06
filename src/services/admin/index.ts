@@ -4,7 +4,7 @@ import api from "../api";
 const withAdminAuth = (headers: any = {}) => {
   const adminToken = localStorage.getItem("echomed_admin_token");
   if (adminToken) {
-    headers.Authorization = `Bearer ${adminToken}`;
+    headers['x-custom-auth'] = adminToken;
   }
   return { headers };
 };

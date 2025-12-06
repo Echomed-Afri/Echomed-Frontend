@@ -1,4 +1,5 @@
 // no default React import needed with react-jsx runtime
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Video, 
@@ -12,7 +13,7 @@ import {
 import { useApp } from '../../contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { t } from '../../utils/translations';
-import socketService from '../../services/socket';
+
 import PatientHeaderActions from '../../components/patient/PatientHeaderActions';
 import PromoBanner from '../../components/patient/PromoBanner';
 import QuickActionsGrid from '../../components/patient/QuickActionsGrid';
@@ -60,6 +61,15 @@ export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
 
+  // Protect the route
+  useEffect(() => {
+    if (!state.user) {
+      navigate('/auth');
+    }
+  }, [state.user, navigate]);
+
+  if (!state.user) return null;
+
   const handleActionClick = (screen: string) => {
     // Map the screen names to routes
     const routeMap: { [key: string]: string } = {
@@ -85,7 +95,7 @@ export default function HomeScreen() {
     // Clear all storage to avoid any stale session keys
     localStorage.clear();
     
-    socketService.disconnect();
+
     dispatch({ type: 'LOGOUT' });
     navigate('/auth');
   };

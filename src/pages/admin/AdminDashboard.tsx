@@ -97,9 +97,7 @@ const AdminDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-3xl font-bold text-gray-900">
-            {value.toLocaleString()}
-          </p>
+            {(value || 0).toLocaleString()}
         </div>
         <div className="text-3xl" style={{ color }}>
           {icon}
