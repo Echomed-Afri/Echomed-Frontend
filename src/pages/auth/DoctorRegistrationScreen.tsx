@@ -174,18 +174,29 @@ export default function DoctorRegistrationScreen() {
       await supabase.auth.signOut();
 
       // Redirect to login page with success message
-      navigate("/auth", { 
-        state: { 
-          message: "Registration successful! Please check your email to verify your account. Your application will be reviewed by our admin team." 
-        } 
+      navigate("/auth", {
+        state: {
+          message:
+            "Registration successful! Please check your email to verify your account. Your application will be reviewed by our admin team.",
+        },
       });
     } catch (error: any) {
       let message = "Registration failed. Please try again.";
-      if (error.message?.includes("already registered") || error.message?.includes("already been registered")) {
-        message = "Email already in use. Please use a different email or login.";
-      } else if (error.message?.includes("weak") || error.message?.includes("password")) {
+      if (
+        error.message?.includes("already registered") ||
+        error.message?.includes("already been registered")
+      ) {
+        message =
+          "Email already in use. Please use a different email or login.";
+      } else if (
+        error.message?.includes("weak") ||
+        error.message?.includes("password")
+      ) {
         message = "Password should be at least 6 characters.";
-      } else if (error.message?.includes("invalid") && error.message?.includes("email")) {
+      } else if (
+        error.message?.includes("invalid") &&
+        error.message?.includes("email")
+      ) {
         message = "Invalid email address.";
       } else if (axios.isAxiosError(error)) {
         message = error.response?.data?.error || error.message || message;

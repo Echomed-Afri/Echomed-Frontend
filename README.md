@@ -14,7 +14,7 @@ React + TypeScript + Vite frontend for the EchoMed telemedicine platform.
 - **State Management**: Context API
 - **API Client**: Axios
 - **Real-time**: Socket.io Client
-- **Authentication**: Firebase Auth
+- **Authentication**: Supabase Auth
 
 ## Project Structure
 
@@ -49,7 +49,7 @@ frontend/
 
    - Copy `.env.example` to `.env`
    - Update `VITE_API_URL` with your backend URL
-   - Firebase config is already set for echomed-afri project
+   - Update `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with your Supabase credentials
 
 3. **Run development server**:
 
@@ -73,39 +73,38 @@ frontend/
 ## Environment Variables
 
 - `VITE_API_URL` - Backend API URL
-- `VITE_FIREBASE_*` - Firebase configuration (see `.env.example`)
+- `VITE_SUPABASE_URL` - Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
 
-## Firebase Deployment
+## Vercel Deployment
 
-1. **Install Firebase CLI** (if not already):
-
-   ```bash
-   npm install -g firebase-tools
-   ```
-
-2. **Login to Firebase**:
+1. **Install Vercel CLI** (optional):
 
    ```bash
-   firebase login
+   npm install -g vercel
    ```
 
-3. **Initialize (first time only)**:
+2. **Build the project**:
 
-   ```bash
-   firebase init hosting
-   ```
-
-   - Select `echomed-afri` project
-   - Set public directory to `dist`
-   - Configure as single-page app: `Yes`
-
-4. **Build and deploy**:
    ```bash
    npm run build
-   firebase deploy --only hosting
    ```
 
-Your app will be live at `https://echomed-afri.web.app`
+3. **Deploy to Vercel**:
+
+   - Push your code to GitHub
+   - Go to [Vercel](https://vercel.com) and import your repository
+   - Set environment variables in Vercel project settings:
+     - `VITE_API_URL`
+     - `VITE_SUPABASE_URL`
+     - `VITE_SUPABASE_ANON_KEY`
+   - Deploy!
+
+   Or use the CLI:
+
+   ```bash
+   vercel
+   ```
 
 ## Features
 
