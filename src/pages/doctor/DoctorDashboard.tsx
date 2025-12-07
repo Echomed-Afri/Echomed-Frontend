@@ -14,7 +14,10 @@ export default function DoctorDashboard() {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
   const [consultations, setConsultations] = useState<any[]>([]);
-  const [isAvailable, setIsAvailable] = useState(false);
+  // Initialize from context if available
+  const [isAvailable, setIsAvailable] = useState(
+    (state.user as any)?.isAvailable || false
+  );
   const [stats, setStats] = useState({
     totalPatients: 0,
     todayConsultations: 0,
@@ -22,13 +25,60 @@ export default function DoctorDashboard() {
     rating: 4.5,
   });
 
+  // Update isAvailable when user context changes
   useEffect(() => {
-    // loadDoctorInfo();
+    const userAvailable = (state.user as any)?.isAvailable;
+    if (userAvailable !== undefined) {
+      console.log(
+        "User context changed, updating isAvailable to:",
+        userAvailable
+      );
+      setIsAvailable(userAvailable);
+    }
+  }, [state.user]);
+
+  useEffect(() => {
+    loadDoctorStatus();
     loadConsultations();
     return () => {
       // Cleanup
     };
   }, []);
+
+  const loadDoctorStatus = async () => {
+    const doctorUser = state.user as any;
+
+    // Try to get doctor ID from context or localStorage
+    const doctorId = doctorUser?.id || localStorage.getItem("echomed_user_id");
+
+    if (!doctorId) {
+      console.log(
+        "No doctor user ID found for loading status. State.user:",
+        state.user
+      );
+      return;
+    }
+
+    console.log("Loading doctor status for ID:", doctorId);
+
+    try {
+      const response = await doctorsAPI.getDoctorProfile(doctorId);
+      console.log("Doctor profile response:", response);
+
+      const doctor = response.doctor || response;
+      console.log("Doctor data:", doctor);
+      console.log("Doctor isAvailable:", doctor.isAvailable);
+
+      // Set the availability state from the database
+      setIsAvailable(doctor.isAvailable || false);
+      // Update the user context with the full doctor data including isAvailable
+      dispatch({ type: "SET_USER", payload: doctor });
+
+      console.log("Set isAvailable to:", doctor.isAvailable || false);
+    } catch (error) {
+      console.error("Failed to load doctor status:", error);
+    }
+  };
 
   // const loadDoctorInfo = async () => {
   //   if (!state.user) {
@@ -52,7 +102,7 @@ export default function DoctorDashboard() {
   const loadConsultations = async () => {
     try {
       if (!state.user || state.user.id === undefined) {
-        navigate("/auth");
+        // ProtectedRoute handles auth redirect, just skip loading
         return;
       }
 
@@ -83,18 +133,37 @@ export default function DoctorDashboard() {
     }
   };
 
-
-
   const handleStatusToggle = async () => {
     const doctorUser = state.user as any;
-    if (!doctorUser?.id) return;
+
+    // Try to get doctor ID from context, localStorage, or state
+    const doctorId = doctorUser?.id || localStorage.getItem("echomed_user_id");
+
+    if (!doctorId) {
+      console.log("No doctor user ID found. State.user:", state.user);
+      console.log(
+        "localStorage echomed_user_id:",
+        localStorage.getItem("echomed_user_id")
+      );
+      return;
+    }
+
+    console.log("Toggling status from:", isAvailable, "to:", !isAvailable);
 
     try {
       const newStatus = !isAvailable;
-      await doctorsAPI.updateDoctorStatus(doctorUser.id, newStatus);
+      const response = await doctorsAPI.updateDoctorStatus(doctorId, newStatus);
+      console.log("Status update response:", response);
+
+      const updatedDoctor = response.doctor || response;
+      console.log("Updated doctor:", updatedDoctor);
+
+      // Update local state
       setIsAvailable(newStatus);
+      // Update context state with the updated doctor data
+      dispatch({ type: "SET_USER", payload: updatedDoctor });
 
-
+      console.log("Status updated successfully to:", newStatus);
     } catch (error) {
       console.error("Failed to update status:", error);
     }
@@ -120,11 +189,23 @@ export default function DoctorDashboard() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    const doctorUser = state.user as any;
+    const doctorId = doctorUser?.id || localStorage.getItem("echomed_user_id");
 
+    // Set doctor status to offline before logging out
+    if (doctorId) {
+      try {
+        await doctorsAPI.updateDoctorStatus(doctorId, false);
+      } catch (error) {
+        console.error("Failed to set offline status:", error);
+        // Continue with logout even if status update fails
+      }
+    }
+
+    localStorage.clear();
     dispatch({ type: "LOGOUT" });
-    navigate("/auth");
+    navigate("/auth", { replace: true });
   };
 
   return (

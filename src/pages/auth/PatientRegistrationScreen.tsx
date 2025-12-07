@@ -131,11 +131,11 @@ export default function PatientRegistrationScreen() {
       localStorage.clear();
       sessionStorage.clear();
 
-      // Store success message temporarily before reload
+      // Store success message temporarily
       sessionStorage.setItem("registration_success", "true");
 
-      // Hard reload to /auth to completely reset app state
-      window.location.href = "/auth";
+      // Navigate to auth screen
+      navigate("/auth", { replace: true });
     } catch (err: any) {
       setError(
         "Registration failed: " + (err.response?.data?.error || err.message)

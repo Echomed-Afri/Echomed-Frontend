@@ -79,6 +79,8 @@ export const PatientLoginForm: React.FC<PatientLoginFormProps> = ({
       localStorage.setItem("echomed_token", response.token);
       localStorage.setItem("echomed_user_type", "patient");
       localStorage.setItem("echomed_user_id", response.user.id);
+      localStorage.setItem("echomed_user_name", response.user.name || "");
+      localStorage.setItem("echomed_user_email", response.user.email || "");
 
       // Store patient information in context
       dispatch({ type: "SET_USER", payload: response.user });

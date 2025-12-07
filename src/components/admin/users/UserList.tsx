@@ -88,7 +88,10 @@ const UserList: React.FC<UserListProps> = ({ onEdit, onCreate, onDeleted }) => {
 
   const filtered = useMemo(() => {
     let data = users;
-    if (roleFilter !== "ALL") data = data.filter((u) => u.role === roleFilter);
+    // Backend uses 'type' field, frontend uses 'role' - handle both
+    if (roleFilter !== "ALL") {
+      data = data.filter((u) => (u.role || u.type) === roleFilter);
+    }
     if (query.trim().length >= 2) {
       const q = query.toLowerCase();
       data = data.filter(
@@ -223,9 +226,9 @@ const UserList: React.FC<UserListProps> = ({ onEdit, onCreate, onDeleted }) => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge
-                      label={user.role}
+                      label={user.role || user.type || "UNKNOWN"}
                       color={
-                        user.role === "DOCTOR"
+                        (user.role || user.type) === "DOCTOR"
                           ? "bg-blue-100 text-blue-800"
                           : "bg-green-100 text-green-800"
                       }

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Mail, Lock, User, AlertCircle, Eye, EyeOff } from "lucide-react";
-import { authAPI } from "../../services/api";
+import { authAPI, doctorsAPI } from "../../services/api";
 import { useApp } from "../../contexts/AppContext";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../supabase";
@@ -52,11 +52,27 @@ export const DoctorLoginForm: React.FC<DoctorLoginFormProps> = ({
       localStorage.setItem("echomed_token", response.token);
       localStorage.setItem("echomed_user_type", "doctor");
       localStorage.setItem("echomed_user_id", response.doctor.id);
+      localStorage.setItem("echomed_user_name", response.doctor.name || "");
+      localStorage.setItem("echomed_user_email", response.doctor.email || "");
 
       // Store doctor information in context
       dispatch({ type: "SET_USER", payload: response.doctor });
       dispatch({ type: "SET_USER_TYPE", payload: "doctor" });
       dispatch({ type: "SET_AUTHENTICATED", payload: true });
+
+      // Set doctor status to online after successful login
+      try {
+        const statusResponse = await doctorsAPI.updateDoctorStatus(
+          response.doctor.id,
+          true
+        );
+        const updatedDoctor = statusResponse.doctor || statusResponse;
+        // Update context with the doctor that has isAvailable set to true
+        dispatch({ type: "SET_USER", payload: updatedDoctor });
+      } catch (err) {
+        console.error("Failed to set online status:", err);
+        // Don't block login if status update fails
+      }
 
       navigate("/doctor-dashboard");
     } catch (err: any) {

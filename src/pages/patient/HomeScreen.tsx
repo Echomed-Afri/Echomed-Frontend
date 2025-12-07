@@ -1,103 +1,98 @@
 // no default React import needed with react-jsx runtime
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Video, 
-  Home, 
-  FileText, 
-  Heart, 
-  Calendar, 
-  Brain, 
-  Shield
-} from 'lucide-react';
-import { useApp } from '../../contexts/AppContext';
-import { useNavigate } from 'react-router-dom';
-import { t } from '../../utils/translations';
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  Video,
+  Home,
+  FileText,
+  Heart,
+  Calendar,
+  Brain,
+  Shield,
+} from "lucide-react";
+import { useApp } from "../../contexts/AppContext";
+import { useNavigate } from "react-router-dom";
+import { t } from "../../utils/translations";
 
-import PatientHeaderActions from '../../components/patient/PatientHeaderActions';
-import PromoBanner from '../../components/patient/PromoBanner';
-import QuickActionsGrid from '../../components/patient/QuickActionsGrid';
+import PatientHeaderActions from "../../components/patient/PatientHeaderActions";
+import PromoBanner from "../../components/patient/PromoBanner";
+import QuickActionsGrid from "../../components/patient/QuickActionsGrid";
 
 const quickActions = [
   {
-    key: 'consultNow',
+    key: "consultNow",
     icon: Video,
-    color: 'bg-emerald-500',
-    screen: 'consultation'
+    color: "bg-emerald-500",
+    screen: "consultation",
   },
   {
-    key: 'scheduleVisit',
+    key: "scheduleVisit",
     icon: Home,
-    color: 'bg-blue-500',
-    screen: 'home-visit'
+    color: "bg-blue-500",
+    screen: "home-visit",
   },
   {
-    key: 'myPrescriptions',
+    key: "myPrescriptions",
     icon: FileText,
-    color: 'bg-purple-500',
-    screen: 'prescriptions'
+    color: "bg-purple-500",
+    screen: "prescriptions",
   },
   {
-    key: 'healthRecords',
+    key: "healthRecords",
     icon: Heart,
-    color: 'bg-red-500',
-    screen: 'records'
+    color: "bg-red-500",
+    screen: "records",
   },
   {
-    key: 'menstrualTracker',
+    key: "menstrualTracker",
     icon: Calendar,
-    color: 'bg-pink-500',
-    screen: 'menstrual'
+    color: "bg-pink-500",
+    screen: "menstrual",
   },
   {
-    key: 'psychConsult',
+    key: "psychConsult",
     icon: Brain,
-    color: 'bg-indigo-500',
-    screen: 'psychology'
-  }
+    color: "bg-indigo-500",
+    screen: "psychology",
+  },
 ];
 
 export default function HomeScreen() {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
 
-  // Protect the route
-  useEffect(() => {
-    if (!state.user) {
-      navigate('/auth');
-    }
-  }, [state.user, navigate]);
+  // ProtectedRoute already handles authentication
+  // No need for additional redirect logic here
 
   if (!state.user) return null;
 
   const handleActionClick = (screen: string) => {
     // Map the screen names to routes
     const routeMap: { [key: string]: string } = {
-      'consultation': '/consultation',
-      'home-visit': '/home-visit', 
-      'prescriptions': '/prescriptions',
-      'chat': '/chat/sample',
-      'psychology': '/psychology'
+      consultation: "/consultation",
+      "home-visit": "/home-visit",
+      prescriptions: "/prescriptions",
+      chat: "/chat/sample",
+      psychology: "/psychology",
     };
-    
+
     const route = routeMap[screen] || `/${screen}`;
     navigate(route);
   };
 
   const handleLanguageToggle = () => {
-    const languages = ['en', 'tw', 'ee', 'ga', 'ha'];
+    const languages = ["en", "tw", "ee", "ga", "ha"];
     const currentIndex = languages.indexOf(state.currentLanguage);
     const nextIndex = (currentIndex + 1) % languages.length;
-    dispatch({ type: 'SET_LANGUAGE', payload: languages[nextIndex] as any });
+    dispatch({ type: "SET_LANGUAGE", payload: languages[nextIndex] as any });
   };
 
   const handleLogout = () => {
     // Clear all storage to avoid any stale session keys
     localStorage.clear();
-    
 
-    dispatch({ type: 'LOGOUT' });
-    navigate('/auth');
+    dispatch({ type: "LOGOUT" });
+    navigate("/auth", { replace: true });
   };
 
   return (
@@ -111,17 +106,17 @@ export default function HomeScreen() {
             </h1>
             <p className="text-gray-600">How can we help you today?</p>
           </div>
-          
+
           <PatientHeaderActions
             onLanguageToggle={handleLanguageToggle}
-            onProfile={() => handleActionClick('profile')}
+            onProfile={() => handleActionClick("profile")}
             onLogout={handleLogout}
           />
         </div>
 
         {/* Promotion Banner */}
         <PromoBanner
-          title={t('freeConsultPromo', state.currentLanguage)}
+          title={t("freeConsultPromo", state.currentLanguage)}
           subtitle="Valid for first-time users"
         />
       </div>
@@ -129,7 +124,7 @@ export default function HomeScreen() {
       {/* Quick Actions Grid */}
       <div className="p-6">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
-        
+
         <QuickActionsGrid
           actions={quickActions}
           onActionClick={handleActionClick}
@@ -143,7 +138,7 @@ export default function HomeScreen() {
           transition={{ delay: 0.6 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => handleActionClick('recovery')}
+          onClick={() => handleActionClick("recovery")}
           className="w-full bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 mb-6"
         >
           <div className="flex items-center space-x-4">
@@ -152,9 +147,11 @@ export default function HomeScreen() {
             </div>
             <div className="text-left">
               <h3 className="font-semibold text-gray-800">
-                {t('recoveryPrograms', state.currentLanguage)}
+                {t("recoveryPrograms", state.currentLanguage)}
               </h3>
-              <p className="text-sm text-gray-600">Support for addiction recovery</p>
+              <p className="text-sm text-gray-600">
+                Support for addiction recovery
+              </p>
             </div>
           </div>
         </motion.button>
@@ -162,7 +159,7 @@ export default function HomeScreen() {
         {/* Health Tips Section */}
         <div className="bg-white rounded-xl p-6 shadow-sm">
           <h3 className="font-bold text-gray-800 mb-4">
-            {t('dailyTip', state.currentLanguage)}
+            {t("dailyTip", state.currentLanguage)}
           </h3>
           <div className="flex items-start space-x-4">
             <img
@@ -172,10 +169,11 @@ export default function HomeScreen() {
             />
             <div className="flex-1">
               <p className="text-gray-700 mb-2">
-                Drink at least 8 glasses of water daily to stay hydrated and maintain good health.
+                Drink at least 8 glasses of water daily to stay hydrated and
+                maintain good health.
               </p>
               <button className="text-emerald-600 text-sm font-medium hover:text-emerald-700">
-                {t('learnMore', state.currentLanguage)} →
+                {t("learnMore", state.currentLanguage)} →
               </button>
             </div>
           </div>

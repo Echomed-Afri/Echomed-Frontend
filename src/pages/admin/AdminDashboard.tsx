@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Users,
   UserCheck,
@@ -30,6 +31,7 @@ interface DashboardStats {
 }
 
 const AdminDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats>({
     totalPatients: 0,
     totalDoctors: 0,
@@ -63,7 +65,9 @@ const AdminDashboard: React.FC = () => {
     try {
       setLoading(true);
       // Stats via admin service
-      const statsData = await adminSystemAPI.stats();
+      const statsResponse = await adminSystemAPI.stats();
+      // Backend returns { stats: {...} }, extract the stats object
+      const statsData = statsResponse.stats || statsResponse;
       setStats(statsData);
 
       // Fetch consultations
@@ -81,7 +85,8 @@ const AdminDashboard: React.FC = () => {
   const handleLogout = () => {
     // Clear all storage to avoid stale admin/user data conflicts
     localStorage.clear();
-    window.location.href = "/admin/login";
+    // Use navigate instead of window.location.href to avoid loading state issues
+    navigate("/admin/login", { replace: true });
   };
 
   const StatCard: React.FC<{
@@ -97,7 +102,7 @@ const AdminDashboard: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
-            {(value || 0).toLocaleString()}
+          {(value || 0).toLocaleString()}
         </div>
         <div className="text-3xl" style={{ color }}>
           {icon}
