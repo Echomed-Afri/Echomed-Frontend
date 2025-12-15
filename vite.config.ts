@@ -7,5 +7,5 @@ export default defineConfig({
   optimizeDeps: {
     include: ['lucide-react'],
   },
-  base: '/Echomed-Frontend/',
+  // base: '/Echomed-Frontend/',
 });
