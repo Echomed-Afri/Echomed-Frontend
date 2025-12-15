@@ -1,5 +1,6 @@
 {
   "name": "echomed-frontend",
+  "homepage": "https://echomed-afri.github.io/Echomed-Frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",
